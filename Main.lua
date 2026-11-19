@@ -1,10 +1,8 @@
 local _, ns = ...
 
 local EVENT_LOGIN = "PLAYER_LOGIN"
-local EVENT_ENTERING_WORLD = "PLAYER_ENTERING_WORLD"
-local EVENT_RESTING = "PLAYER_UPDATE_RESTING"
 
-local eventFrame = CreateFrame("Frame")
+local loginFrame = CreateFrame("Frame")
 
 local function Start()
     if not ns.Client.IsSupported() then
@@ -13,19 +11,11 @@ local function Start()
     end
     ns.Database.Init()
     ns.Commands.Register()
-    -- Zone changes and instance changes both end in a loading screen.
-    eventFrame:RegisterEvent(EVENT_ENTERING_WORLD)
-    eventFrame:RegisterEvent(EVENT_RESTING)
+    ns.MinimapButton.Create()
+    -- The game events come last, so no handler runs before the database exists.
+    ns.Events.Register()
     ns.Fader.Apply()
 end
 
-local function OnEvent(_, event)
-    if event == EVENT_LOGIN then
-        Start()
-    else
-        ns.Fader.Apply()
-    end
-end
-
-eventFrame:SetScript("OnEvent", OnEvent)
-eventFrame:RegisterEvent(EVENT_LOGIN)
+loginFrame:SetScript("OnEvent", Start)
+loginFrame:RegisterEvent(EVENT_LOGIN)

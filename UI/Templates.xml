@@ -1,0 +1,178 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/UI.xsd">
+
+  <!--
+    Flat design with a near black panel, thin warm borders and a gold accent.
+    A row box is built from two textures: borderFill covers the full area in the border
+    color and bg sits one pixel inside in the fill color. This gives a 1px border without a backdrop.
+    The colors match UI/Theme.lua.
+  -->
+
+  <Frame name="InterfaceAutoFadeFrame" parent="UIParent" inherits="BackdropTemplate" hidden="true">
+    <Size x="640" y="560"/>
+    <Anchors><Anchor point="CENTER"/></Anchors>
+  </Frame>
+
+  <!-- Module header: enable checkbox, name and a click to expand or collapse -->
+  <Button name="InterfaceAutoFade_ModuleHeaderTemplate" virtual="true">
+    <Size y="32"/>
+    <HighlightTexture file="Interface\BUTTONS\WHITE8X8" alphaMode="ADD">
+      <Color r="1" g="0.82" b="0" a="0.06"/>
+    </HighlightTexture>
+    <Layers>
+      <Layer level="BACKGROUND" textureSubLevel="0">
+        <Texture parentKey="borderFill" file="Interface\BUTTONS\WHITE8X8" setAllPoints="true">
+          <Color r="0.50" g="0.40" b="0.12" a="0.7"/>
+        </Texture>
+      </Layer>
+      <Layer level="BACKGROUND" textureSubLevel="1">
+        <Texture parentKey="bg" file="Interface\BUTTONS\WHITE8X8">
+          <Color r="0.08" g="0.075" b="0.06" a="1"/>
+          <Anchors>
+            <Anchor point="TOPLEFT" x="1" y="-1"/>
+            <Anchor point="BOTTOMRIGHT" x="-1" y="1"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <FontString parentKey="name" inherits="GameFontNormalLeft">
+          <Anchors><Anchor point="LEFT" x="40" y="0"/></Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <CheckButton parentKey="enableButton">
+        <Size x="22" y="22"/>
+        <Anchors><Anchor point="LEFT" x="10" y="0"/></Anchors>
+        <NormalTexture    atlas="checkbox-minimal" useAtlasSize="true"/>
+        <PushedTexture    atlas="checkbox-minimal" useAtlasSize="true"/>
+        <HighlightTexture atlas="checkbox-minimal" useAtlasSize="true" alphaMode="ADD"/>
+        <CheckedTexture   atlas="checkmark-minimal" useAtlasSize="true"/>
+      </CheckButton>
+    </Frames>
+  </Button>
+
+  <!-- Toggle row -->
+  <Button name="InterfaceAutoFade_ToggleTemplate" virtual="true">
+    <Size y="32"/>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="backgroundTexture" file="Interface\BUTTONS\WHITE8X8">
+          <Color r="0.60" g="0.55" b="0.40" a="0.08"/>
+          <Anchors>
+            <Anchor point="TOPLEFT" x="0" y="-1"/>
+            <Anchor point="BOTTOMRIGHT" x="0" y="1"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <FontString parentKey="name" inherits="GameFontNormalLeft">
+          <Anchors><Anchor point="LEFT" x="15" y="2"/></Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <CheckButton parentKey="toggle">
+        <Size x="28" y="28"/>
+        <Anchors><Anchor point="RIGHT" x="-10" y="2"/></Anchors>
+        <NormalTexture    atlas="checkbox-minimal" useAtlasSize="true"/>
+        <PushedTexture    atlas="checkbox-minimal" useAtlasSize="true"/>
+        <HighlightTexture atlas="checkbox-minimal" useAtlasSize="true" alphaMode="ADD"/>
+        <CheckedTexture   atlas="checkmark-minimal" useAtlasSize="true"/>
+      </CheckButton>
+    </Frames>
+  </Button>
+
+  <!-- Info text in a warm light color with a small indent and extra line spacing -->
+  <Frame name="InterfaceAutoFade_InfoTextTemplate" virtual="true">
+    <Size y="24"/>
+    <Layers>
+      <Layer level="OVERLAY">
+        <FontString parentKey="info" inherits="GameFontHighlightSmall" justifyH="LEFT">
+          <Color r="0.82" g="0.79" b="0.72" a="1"/>
+          <Anchors>
+            <Anchor point="LEFT"  x="22" y="0"/>
+            <Anchor point="RIGHT" x="-15" y="0"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad>self.info:SetSpacing(3)</OnLoad>
+    </Scripts>
+  </Frame>
+
+  <!-- Slider row -->
+  <Frame name="InterfaceAutoFade_SliderTemplate" virtual="true">
+    <Size y="52"/>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="backgroundTexture" file="Interface\BUTTONS\WHITE8X8">
+          <Color r="0.60" g="0.55" b="0.40" a="0.08"/>
+          <Anchors>
+            <Anchor point="TOPLEFT" x="0" y="-1"/>
+            <Anchor point="BOTTOMRIGHT" x="0" y="1"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <FontString parentKey="label" inherits="GameFontNormalLeft">
+          <Anchors><Anchor point="TOPLEFT" x="15" y="-5"/></Anchors>
+        </FontString>
+        <FontString parentKey="valueText" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+          <Color r="1" g="0.82" b="0" a="1"/>
+          <Anchors><Anchor point="TOPRIGHT" x="-15" y="-5"/></Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <Slider parentKey="slider" orientation="HORIZONTAL" enableMouse="true">
+        <Size y="17"/>
+        <Anchors>
+          <Anchor point="BOTTOMLEFT"  x="15" y="8"/>
+          <Anchor point="BOTTOMRIGHT" x="-15" y="8"/>
+        </Anchors>
+        <ThumbTexture file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+          <Size x="32" y="18"/>
+        </ThumbTexture>
+        <Layers>
+          <Layer level="BACKGROUND">
+            <Texture file="Interface\Buttons\UI-SliderBar-Background">
+              <Size y="8"/>
+              <Anchors>
+                <Anchor point="LEFT"  x="10" y="0"/>
+                <Anchor point="RIGHT" x="-10" y="0"/>
+              </Anchors>
+            </Texture>
+          </Layer>
+        </Layers>
+      </Slider>
+    </Frames>
+  </Frame>
+
+  <!-- Section heading with a line below -->
+  <Frame name="InterfaceAutoFade_SeparatorTemplate" virtual="true">
+    <Size y="50"/>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture parentKey="lineBottom" file="Interface\BUTTONS\WHITE8X8">
+          <Color r="0.85" g="0.68" b="0.15" a="0.6"/>
+          <Size y="1"/>
+          <Anchors>
+            <Anchor point="BOTTOMLEFT"  x="0" y="12"/>
+            <Anchor point="BOTTOMRIGHT" x="0" y="12"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <FontString parentKey="label" inherits="GameFontNormalLarge" justifyH="CENTER">
+          <Color r="1" g="0.82" b="0" a="1"/>
+          <Anchors>
+            <Anchor point="BOTTOMLEFT"  x="8" y="4"/>
+            <Anchor point="BOTTOMRIGHT" x="-8" y="4"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Frame>
+
+</Ui>

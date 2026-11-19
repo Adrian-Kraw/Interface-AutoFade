@@ -1,48 +1,105 @@
 local _, ns = ...
 
--- Remembers the alpha a frame had before this addon changed it.
--- A frame is only restored when it is in this table, so foreign alpha values stay untouched.
-local originalAlpha = {}
+local ALPHA = ns.ALPHA
+local EXCLUDE = ns.EXCLUDE
 
-local function Fade(frame, alpha)
-    if originalAlpha[frame] == nil then
-        originalAlpha[frame] = frame:GetAlpha()
+-- Mode key to the alpha that mode wants. The highest wish wins.
+-- Without any wish everything is fully visible.
+local modeAlphas = {}
+local inCombat = false
+
+local function GetHighestModeAlpha()
+    local highest
+    for _, alpha in pairs(modeAlphas) do
+        if highest == nil or alpha > highest then
+            highest = alpha
+        end
     end
-    frame:SetAlpha(alpha)
+    return highest or ALPHA.FULL
 end
 
-local function Restore(frame)
-    local original = originalAlpha[frame]
-    if original ~= nil then
-        frame:SetAlpha(original)
-        originalAlpha[frame] = nil
+local function IsExcluded(excludeKey)
+    if not excludeKey then
+        return false
+    end
+    for modeKey in pairs(modeAlphas) do
+        if ns.Database.IsExcluded(modeKey, excludeKey) then
+            return true
+        end
+    end
+    return false
+end
+
+local function FadeFrames(frames, alpha)
+    for _, frame in ipairs(frames) do
+        ns.FadeEngine.FadeTo(frame, alpha)
     end
 end
 
--- Returns the alpha of the active mode, or nil when nothing should be faded.
-local function GetTargetAlpha()
-    local mode = ns.Modes.GetActive()
-    if not mode then
-        return nil
+local function ShowMinimap()
+    if Minimap then
+        Minimap:SetAlpha(ALPHA.FULL)
     end
-    local settings = ns.Database.GetModeSettings(mode.key)
-    if not settings.enabled then
-        return nil
+    ns.MinimapOverlays.Show()
+end
+
+local function ApplyMinimap(highestAlpha)
+    if highestAlpha == ALPHA.HIDDEN and not IsExcluded(EXCLUDE.MINIMAP) then
+        ns.MinimapOverlays.Hide()
+    else
+        ShowMinimap()
     end
-    return settings.alpha
 end
 
 local Fader = {}
 
 function Fader.Apply()
-    local targetAlpha = GetTargetAlpha()
-    for _, frame in ipairs(ns.Elements.GetFrames()) do
-        if targetAlpha then
-            Fade(frame, targetAlpha)
-        else
-            Restore(frame)
-        end
+    if inCombat then
+        return
     end
+    local highest = GetHighestModeAlpha()
+    for _, group in ipairs(ns.Elements.GetGroups()) do
+        FadeFrames(group.frames, IsExcluded(group.excludeKey) and ALPHA.FULL or highest)
+    end
+    FadeFrames(ns.Elements.GetChatFrames(), IsExcluded(EXCLUDE.CHAT) and ALPHA.FULL or highest)
+    ApplyMinimap(highest)
+end
+
+-- Forgets all wishes and shows everything. Used when combat starts.
+function Fader.ShowAll()
+    wipe(modeAlphas)
+    ShowMinimap()
+    for _, group in ipairs(ns.Elements.GetGroups()) do
+        FadeFrames(group.frames, ALPHA.FULL)
+    end
+    FadeFrames(ns.Elements.GetChatFrames(), ALPHA.FULL)
+end
+
+-- Shows the chat for a while when a message arrives.
+function Fader.ShowChat()
+    FadeFrames(ns.Elements.GetChatFrames(), ALPHA.FULL)
+end
+
+function Fader.ResetMinimap()
+    ShowMinimap()
+end
+
+function Fader.SetModeAlpha(modeKey, alpha)
+    modeAlphas[modeKey] = alpha
+    Fader.Apply()
+end
+
+function Fader.ClearMode(modeKey)
+    modeAlphas[modeKey] = nil
+    Fader.Apply()
+end
+
+function Fader.SetInCombat(value)
+    inCombat = value
+end
+
+function Fader.IsInCombat()
+    return inCombat
 end
 
 ns.Fader = Fader

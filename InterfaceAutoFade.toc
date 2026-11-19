@@ -7,11 +7,24 @@
 ## IconTexture: Interface\AddOns\InterfaceAutoFade\Assets\icon
 
 Core\Constants.lua
+Locale\deDE.lua
 Core\Client.lua
 Core\Chat.lua
 Core\Modes.lua
 Core\Database.lua
 Core\Elements.lua
+Core\FadeEngine.lua
+Core\MinimapOverlays.lua
 Core\Fader.lua
+Core\ModeController.lua
+Core\Events.lua
+
+UI\Templates.xml
+UI\Theme.lua
+UI\Rows.lua
+UI\SettingsPage.lua
+UI\MainWindow.lua
+UI\MinimapButton.lua
+
 Core\Commands.lua
 Main.lua

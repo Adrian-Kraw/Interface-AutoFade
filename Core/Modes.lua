@@ -17,26 +17,26 @@ local function IsInHousing()
     return inInstance and (instanceType == INSTANCE_TYPE.NEIGHBORHOOD or instanceType == INSTANCE_TYPE.INTERIOR)
 end
 
--- The modes exclude each other, so at most one of them is active at a time.
+-- The places of the modes exclude each other, so at most one mode applies at a time.
 local DEFINITIONS = {
     {
         key = MODE.CHILL,
         clients = ALL_CLIENTS,
-        isActive = function()
+        appliesHere = function()
             return IsResting() and IsOutsideInstance()
         end,
     },
     {
         key = MODE.OPEN_WORLD,
         clients = ALL_CLIENTS,
-        isActive = function()
+        appliesHere = function()
             return not IsResting() and IsOutsideInstance()
         end,
     },
     {
         key = MODE.HOUSING,
         clients = RETAIL_ONLY,
-        isActive = IsInHousing,
+        appliesHere = IsInHousing,
     },
 }
 
@@ -68,22 +68,6 @@ function Modes.GetAvailable()
     return availableModes
 end
 
-function Modes.Find(modeKey)
-    for _, mode in ipairs(availableModes) do
-        if mode.key == modeKey then
-            return mode
-        end
-    end
-    return nil
-end
-
-function Modes.GetActive()
-    for _, mode in ipairs(availableModes) do
-        if mode.isActive() then
-            return mode
-        end
-    end
-    return nil
-end
+Modes.IsHousingZone = IsInHousing
 
 ns.Modes = Modes
