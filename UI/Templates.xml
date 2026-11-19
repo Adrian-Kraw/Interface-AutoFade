@@ -167,8 +167,8 @@
         <FontString parentKey="label" inherits="GameFontNormalLarge" justifyH="CENTER">
           <Color r="1" g="0.82" b="0" a="1"/>
           <Anchors>
-            <Anchor point="BOTTOMLEFT"  x="8" y="4"/>
-            <Anchor point="BOTTOMRIGHT" x="-8" y="4"/>
+            <Anchor point="BOTTOMLEFT"  x="8" y="18"/>
+            <Anchor point="BOTTOMRIGHT" x="-8" y="18"/>
           </Anchors>
         </FontString>
       </Layer>

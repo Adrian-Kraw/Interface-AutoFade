@@ -4,24 +4,46 @@ local Theme = ns.Theme
 local COLORS = Theme.COLORS
 local TEXT = ns.TEXT
 
-local BUTTON_SIZE = 36
-local ICON_SIZE = 30
-local RADIUS = 99
+local BUTTON_SIZE = 31
+-- Minimap button collectors only take buttons with a name. The name does not contain LibDBIcon
+-- on purpose. Collectors such as Leatrix Plus skip those names, because they expect them in the library list.
+local BUTTON_NAME = "InterfaceAutoFadeMinimapButton"
+-- The button sits just outside the minimap edge, like the buttons of most other addons.
+local EDGE_OFFSET = 5
 local FRAME_LEVEL = 8
 local FRAME_STRATA = "MEDIUM"
 local TOOLTIP_ANCHOR = "ANCHOR_LEFT"
-local CIRCLE_MASK_TEXTURE = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local GOLD_RING_ATLAS = "talents-node-choiceflyout-circle-yellow"
 local DRAG_BUTTON = "LeftButton"
 local CLICK_REGISTRATION = "AnyUp"
 local TOOLTIP_LINE_COLOR = 0.7
+
+-- The same game textures as in LibDBIcon, the library behind most minimap buttons, so this
+-- button looks like theirs. The numbers are file ids of Interface\Minimap\MiniMap-TrackingBorder,
+-- Interface\Minimap\UI-Minimap-Background and Interface\Minimap\UI-Minimap-ZoomButton-Highlight.
+local BORDER_TEXTURE = 136430
+local BACKGROUND_TEXTURE = 136467
+local HIGHLIGHT_TEXTURE = 136477
+
+-- Size and place of the three layers. LibDBIcon picks the values by the game project, and so does this file.
+local LAYOUT_MAINLINE = {
+    border = { size = 50, point = "TOPLEFT", x = 0, y = 0 },
+    background = { size = 24, point = "CENTER", x = 0, y = 0 },
+    icon = { size = 18, point = "CENTER", x = 0, y = 0 },
+}
+local LAYOUT_OTHER = {
+    border = { size = 53, point = "TOPLEFT", x = 0, y = 0 },
+    background = { size = 20, point = "TOPLEFT", x = 7, y = -5 },
+    icon = { size = 17, point = "TOPLEFT", x = 7, y = -6 },
+}
+local LAYOUT = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and LAYOUT_MAINLINE or LAYOUT_OTHER
 
 local MinimapButton = {}
 
 local function UpdatePosition(button)
     local angle = math.rad(ns.Database.GetMinimapAngle())
+    local radius = Minimap:GetWidth() / 2 + EDGE_OFFSET
     button:ClearAllPoints()
-    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * RADIUS, math.sin(angle) * RADIUS)
+    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
 end
 
 -- Turns the cursor position into an angle around the minimap center.
@@ -43,8 +65,16 @@ local function ShowTooltip(button)
     GameTooltip:Show()
 end
 
+local function CreateLayer(button, drawLayer, texture, spec)
+    local layer = button:CreateTexture(nil, drawLayer)
+    layer:SetSize(spec.size, spec.size)
+    layer:SetTexture(texture)
+    layer:SetPoint(spec.point, button, spec.point, spec.x, spec.y)
+    return layer
+end
+
 function MinimapButton.Create()
-    local button = CreateFrame("Button", nil, Minimap)
+    local button = CreateFrame("Button", BUTTON_NAME, Minimap)
     button:SetSize(BUTTON_SIZE, BUTTON_SIZE)
     button:SetFrameStrata(FRAME_STRATA)
     button:SetFixedFrameStrata(true)
@@ -52,21 +82,11 @@ function MinimapButton.Create()
     button:SetFixedFrameLevel(true)
     button:RegisterForClicks(CLICK_REGISTRATION)
     button:RegisterForDrag(DRAG_BUTTON)
+    button:SetHighlightTexture(HIGHLIGHT_TEXTURE)
 
-    local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(ICON_SIZE, ICON_SIZE)
-    icon:SetPoint("CENTER")
-    icon:SetTexture(ns.ICON_TEXTURE)
-
-    local mask = button:CreateMaskTexture()
-    mask:SetAllPoints(icon)
-    mask:SetTexture(CIRCLE_MASK_TEXTURE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    icon:AddMaskTexture(mask)
-
-    local ring = button:CreateTexture(nil, "OVERLAY")
-    ring:SetSize(BUTTON_SIZE, BUTTON_SIZE)
-    ring:SetPoint("CENTER")
-    ring:SetAtlas(GOLD_RING_ATLAS)
+    CreateLayer(button, "OVERLAY", BORDER_TEXTURE, LAYOUT.border)
+    CreateLayer(button, "BACKGROUND", BACKGROUND_TEXTURE, LAYOUT.background)
+    CreateLayer(button, "ARTWORK", ns.ICON_TEXTURE, LAYOUT.icon)
 
     button:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == DRAG_BUTTON then
@@ -78,6 +98,10 @@ function MinimapButton.Create()
         GameTooltip:Hide()
     end)
     button:SetScript("OnDragStart", function(self)
+        -- A collector bar puts the button under another parent. It must not jump back to the minimap then.
+        if self:GetParent() ~= Minimap then
+            return
+        end
         self:SetScript("OnUpdate", UpdateAngleFromCursor)
     end)
     button:SetScript("OnDragStop", function(self)

@@ -8,15 +8,12 @@ local ALPHA = ns.ALPHA
 local WINDOW_STRATA = "DIALOG"
 local DRAG_ALPHA = 0.75
 local STONE_TEXTURE = "Interface\\FrameGeneral\\UI-Background-Rock"
-local CIRCLE_MASK_ATLAS = "CircleMaskScalable"
-local GOLD_RING_ATLAS = "talents-node-choiceflyout-circle-yellow"
 local FONT_NORMAL = "GameFontNormal"
 local FONT_LARGE = "GameFontNormalLarge"
 local FONT_SMALL_DISABLED = "GameFontDisableSmall"
 
-local PORTRAIT_SIZE = 52
-local PORTRAIT_RING_SIZE = 58
-local PORTRAIT_OFFSET = 10
+local EMBLEM_SIZE = 64
+local EMBLEM_OFFSET = 16
 local CLOSE_BUTTON_SIZE = 26
 local CLOSE_BUTTON_OFFSET = 10
 local TITLE_TOP = -13
@@ -98,22 +95,12 @@ local function CreateVersionText()
     text:SetText(version ~= "" and ("v" .. version) or "")
 end
 
--- Round portrait with a golden ring. It sticks out over the top left corner.
-local function CreatePortrait()
-    local portrait = window:CreateTexture(nil, "OVERLAY", nil, 2)
-    portrait:SetSize(PORTRAIT_SIZE, PORTRAIT_SIZE)
-    portrait:SetPoint("TOPLEFT", -PORTRAIT_OFFSET, PORTRAIT_OFFSET)
-    portrait:SetTexture(ns.ICON_TEXTURE)
-
-    local mask = window:CreateMaskTexture()
-    mask:SetAtlas(CIRCLE_MASK_ATLAS)
-    mask:SetAllPoints(portrait)
-    portrait:AddMaskTexture(mask)
-
-    local ring = window:CreateTexture(nil, "OVERLAY", nil, 3)
-    ring:SetSize(PORTRAIT_RING_SIZE, PORTRAIT_RING_SIZE)
-    ring:SetPoint("CENTER", portrait, "CENTER")
-    ring:SetAtlas(GOLD_RING_ATLAS)
+-- Two gears in the top left corner. They stick out over the corner and have no frame.
+local function CreateEmblem()
+    local emblem = window:CreateTexture(nil, "OVERLAY", nil, 2)
+    emblem:SetSize(EMBLEM_SIZE, EMBLEM_SIZE)
+    emblem:SetPoint("TOPLEFT", -EMBLEM_OFFSET, EMBLEM_OFFSET)
+    emblem:SetTexture(ns.ICON_TEXTURE)
 end
 
 local function CreateTitle()
@@ -165,7 +152,7 @@ end
 StyleWindow()
 CreateCloseButton()
 CreateVersionText()
-CreatePortrait()
+CreateEmblem()
 CreateTitle()
 scrollBox = CreateContent()
 
