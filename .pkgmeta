@@ -1,0 +1,6 @@
+package-as: InterfaceAutoFade
+
+ignore:
+  - .gitignore
+  - .vscode
+  - .claude

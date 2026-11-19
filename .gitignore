@@ -1,0 +1,23 @@
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temp
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Packager output
+.release/
+*.zip

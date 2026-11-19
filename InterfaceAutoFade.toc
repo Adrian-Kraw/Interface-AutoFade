@@ -1,0 +1,17 @@
+## Interface: 120105, 16001
+## Title: Interface AutoFade
+## Notes: Fades interface elements depending on where you are. One addon for Retail and Forever.
+## Author: Aklime
+## Version: 0.1.0
+## SavedVariables: InterfaceAutoFadeDB
+## IconTexture: Interface\AddOns\InterfaceAutoFade\Assets\icon
+
+Core\Constants.lua
+Core\Client.lua
+Core\Chat.lua
+Core\Modes.lua
+Core\Database.lua
+Core\Elements.lua
+Core\Fader.lua
+Core\Commands.lua
+Main.lua
