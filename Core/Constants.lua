@@ -1,6 +1,5 @@
 local addonName, ns = ...
 
-ns.ADDON_NAME = addonName
 ns.ICON_TEXTURE = "Interface\\AddOns\\" .. addonName .. "\\Assets\\icon"
 
 -- Client keys. Client.lua decides which one is active.
@@ -16,12 +15,6 @@ ns.MODE = {
     HOUSING = "housing",
 }
 
--- Blizzard uses these instance types for player housing.
-ns.INSTANCE_TYPE = {
-    NEIGHBORHOOD = "neighborhood",
-    INTERIOR = "interior",
-}
-
 -- Element groups a player can keep visible while the rest fades.
 ns.EXCLUDE = {
     CHAT = "chat",
@@ -34,6 +27,7 @@ ns.EXCLUDE = {
     BUFFS = "buffs",
     REP_BAR = "repBar",
     DAMAGE_METER = "damageMeter",
+    HOUSING_MENU = "housingMenu",
 }
 
 -- Order of the toggles in the settings window.
@@ -57,6 +51,7 @@ ns.SETTING = {
     MOVE_DELAY = "moveDelay",
     IDLE_DELAY = "idleDelay",
     CHAT_DELAY = "chatDelay",
+    HOVER_REVEAL = "hoverReveal",
 }
 
 ns.DEFAULTS = {
@@ -65,6 +60,7 @@ ns.DEFAULTS = {
     MOVE_DELAY = 1,
     IDLE_DELAY = 5,
     CHAT_DELAY = 5,
+    HOVER_REVEAL = false,
     MINIMAP_ANGLE = 220,
 }
 
@@ -76,17 +72,8 @@ ns.LIMITS = {
 }
 
 ns.ALPHA = {
-    HIDDEN = 0,
     FULL = 1,
 }
-
-ns.PERCENT = 100
-
--- Alpha units per second. A full fade takes a little under one second.
-ns.FADE_SPEED = 1.5
-
--- Pause after a loading screen before the interface fades out.
-ns.ENTERING_WORLD_DELAY = 2
 
 ns.SLASH_KEY = "INTERFACEAUTOFADE"
 ns.SLASH_COMMAND = "/autofade"
@@ -116,6 +103,7 @@ ns.TEXT = {
     SLIDER_MOVE_DELAY = "Move Duration until Fade In",
     SLIDER_IDLE_DELAY = "Fade Out After",
     SLIDER_CHAT_DELAY = "Chat Visible For",
+    TOGGLE_HOVER_REVEAL = "Show on Mouse Hover",
     INSTANT = "instant",
     PERCENT_FORMAT = "%d%%",
     SECONDS_FORMAT = "%d s",
@@ -139,5 +127,6 @@ ns.TEXT = {
         [ns.EXCLUDE.BUFFS] = "Buffs / Debuffs",
         [ns.EXCLUDE.REP_BAR] = "Reputation Bar",
         [ns.EXCLUDE.DAMAGE_METER] = "Damage Meter",
+        [ns.EXCLUDE.HOUSING_MENU] = "Housing Build Menu",
     },
 }

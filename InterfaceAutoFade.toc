@@ -12,12 +12,9 @@ Core\Client.lua
 Core\Chat.lua
 Core\Modes.lua
 Core\Database.lua
-Core\Elements.lua
-Core\FadeEngine.lua
-Core\MinimapOverlays.lua
-Core\Fader.lua
-Core\ModeController.lua
-Core\Events.lua
+
+Modules\HUDFader_Retail.lua
+Modules\HUDFader_Forever.lua
 
 UI\Templates.xml
 UI\Theme.lua

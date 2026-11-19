@@ -22,7 +22,14 @@ local function FormatMoveDelay(value)
     return FormatSeconds(value)
 end
 
-local function InsertSlider(modeNode, modeKey, slider)
+-- The fade code lives in the HUDFader files. Their methods for the second and third mode
+-- end with the suffix of the mode, for example SetEnabled2.
+local function CallFader(methodName, mode, ...)
+    local fader = ns.HUDFader
+    fader[methodName .. mode.apiSuffix](fader, ...)
+end
+
+local function InsertSlider(modeNode, mode, slider)
     modeNode:Insert({
         template = TEMPLATE.SLIDER,
         label = slider.label,
@@ -31,65 +38,81 @@ local function InsertSlider(modeNode, modeKey, slider)
         step = SLIDER_STEP,
         format = slider.format,
         getValue = function()
-            return ns.Database.GetModeSetting(modeKey, slider.setting)
+            return ns.Database.GetModeSetting(mode.dbKey, slider.setting)
         end,
         setValue = function(value)
-            ns.Database.SetModeSetting(modeKey, slider.setting, value)
-            if slider.onChange then
-                slider.onChange()
+            ns.Database.SetModeSetting(mode.dbKey, slider.setting, value)
+            if slider.appliesAlpha then
+                CallFader("ApplyAlpha", mode)
             end
         end,
     })
 end
 
-local function InsertExcludeToggle(modeNode, modeKey, excludeKey)
+local function InsertExcludeToggle(modeNode, mode, excludeKey)
     modeNode:Insert({
         template = TEMPLATE.TOGGLE,
         name = TEXT.EXCLUDE_LABEL[excludeKey],
         getValue = function()
-            return ns.Database.IsExcluded(modeKey, excludeKey)
+            return ns.Database.IsExcluded(mode.dbKey, excludeKey)
         end,
         setValue = function(excluded)
-            ns.Database.SetExcluded(modeKey, excludeKey, excluded)
-            ns.Fader.Apply()
+            ns.Database.SetExcluded(mode.dbKey, excludeKey, excluded)
+            ns.HUDFader:Refresh()
+        end,
+    })
+end
+
+-- The hover option sits at the top of each mode. The fader reads the saved value directly,
+-- so a refresh applies a change at once.
+local function InsertHoverToggle(modeNode, mode)
+    modeNode:Insert({
+        template = TEMPLATE.TOGGLE,
+        name = TEXT.TOGGLE_HOVER_REVEAL,
+        getValue = function()
+            return ns.Database.GetModeSetting(mode.dbKey, SETTING.HOVER_REVEAL)
+        end,
+        setValue = function(enabled)
+            ns.Database.SetModeSetting(mode.dbKey, SETTING.HOVER_REVEAL, enabled)
+            ns.HUDFader:Refresh()
         end,
     })
 end
 
 local function InsertMode(dataProvider, mode)
-    local modeKey = mode.key
-    local controller = ns.ModeController.Find(modeKey)
-
     local modeNode = dataProvider:Insert({
         template = TEMPLATE.HEADER,
-        name = TEXT.MODE_LABEL[modeKey],
+        name = TEXT.MODE_LABEL[mode.key],
         getEnabled = function()
-            return ns.Database.GetModeSetting(modeKey, SETTING.ENABLED)
+            return ns.Database.GetModeSetting(mode.dbKey, SETTING.ENABLED)
         end,
-        setEnabled = controller.SetEnabled,
+        setEnabled = function(enabled)
+            CallFader("SetEnabled", mode, enabled)
+        end,
     })
     modeNode:SetCollapsed(true)
 
-    InsertSlider(modeNode, modeKey, {
+    InsertHoverToggle(modeNode, mode)
+    InsertSlider(modeNode, mode, {
         label = TEXT.SLIDER_TRANSPARENCY,
         setting = SETTING.ALPHA,
         limits = LIMITS.ALPHA,
         format = FormatPercent,
-        onChange = controller.ApplyAlpha,
+        appliesAlpha = true,
     })
-    InsertSlider(modeNode, modeKey, {
+    InsertSlider(modeNode, mode, {
         label = TEXT.SLIDER_MOVE_DELAY,
         setting = SETTING.MOVE_DELAY,
         limits = LIMITS.MOVE_DELAY,
         format = FormatMoveDelay,
     })
-    InsertSlider(modeNode, modeKey, {
+    InsertSlider(modeNode, mode, {
         label = TEXT.SLIDER_IDLE_DELAY,
         setting = SETTING.IDLE_DELAY,
         limits = LIMITS.IDLE_DELAY,
         format = FormatSeconds,
     })
-    InsertSlider(modeNode, modeKey, {
+    InsertSlider(modeNode, mode, {
         label = TEXT.SLIDER_CHAT_DELAY,
         setting = SETTING.CHAT_DELAY,
         limits = LIMITS.CHAT_DELAY,
@@ -98,7 +121,10 @@ local function InsertMode(dataProvider, mode)
 
     modeNode:Insert({ template = TEMPLATE.INFO, text = TEXT.ALWAYS_VISIBLE })
     for _, excludeKey in ipairs(ns.EXCLUDE_ORDER) do
-        InsertExcludeToggle(modeNode, modeKey, excludeKey)
+        InsertExcludeToggle(modeNode, mode, excludeKey)
+    end
+    for _, excludeKey in ipairs(mode.extraExcludes or {}) do
+        InsertExcludeToggle(modeNode, mode, excludeKey)
     end
 end
 

@@ -3,12 +3,15 @@ local _, ns = ...
 local DEFAULTS = ns.DEFAULTS
 local SETTING = ns.SETTING
 
+-- The HUDFader files read InterfaceAutoFadeDB.interfaceFade[dbKey] directly,
+-- so the layout of this table must stay as it is.
 local MODE_DEFAULTS = {
     [SETTING.ENABLED] = DEFAULTS.ENABLED,
     [SETTING.ALPHA] = DEFAULTS.ALPHA_PERCENT,
     [SETTING.MOVE_DELAY] = DEFAULTS.MOVE_DELAY,
     [SETTING.IDLE_DELAY] = DEFAULTS.IDLE_DELAY,
     [SETTING.CHAT_DELAY] = DEFAULTS.CHAT_DELAY,
+    [SETTING.HOVER_REVEAL] = DEFAULTS.HOVER_REVEAL,
 }
 
 local db
@@ -19,16 +22,21 @@ local function SetDefault(target, key, value)
     end
 end
 
-local function EnsureModeSettings(modeKey)
-    local settings = db.fade[modeKey] or {}
+local function EnsureExcludeDefaults(settings, excludeKeys)
+    for _, excludeKey in ipairs(excludeKeys) do
+        SetDefault(settings.exclude, excludeKey, false)
+    end
+end
+
+local function EnsureModeSettings(mode)
+    local settings = db.interfaceFade[mode.dbKey] or {}
     for setting, value in pairs(MODE_DEFAULTS) do
         SetDefault(settings, setting, value)
     end
     settings.exclude = settings.exclude or {}
-    for _, excludeKey in ipairs(ns.EXCLUDE_ORDER) do
-        SetDefault(settings.exclude, excludeKey, false)
-    end
-    db.fade[modeKey] = settings
+    EnsureExcludeDefaults(settings, ns.EXCLUDE_ORDER)
+    EnsureExcludeDefaults(settings, mode.extraExcludes or {})
+    db.interfaceFade[mode.dbKey] = settings
 end
 
 local Database = {}
@@ -38,27 +46,27 @@ local Database = {}
 function Database.Init()
     InterfaceAutoFadeDB = InterfaceAutoFadeDB or {}
     db = InterfaceAutoFadeDB
-    db.fade = db.fade or {}
+    db.interfaceFade = db.interfaceFade or {}
     SetDefault(db, "minimapAngle", DEFAULTS.MINIMAP_ANGLE)
     for _, mode in ipairs(ns.Modes.GetAvailable()) do
-        EnsureModeSettings(mode.key)
+        EnsureModeSettings(mode)
     end
 end
 
-function Database.GetModeSetting(modeKey, setting)
-    return db.fade[modeKey][setting]
+function Database.GetModeSetting(dbKey, setting)
+    return db.interfaceFade[dbKey][setting]
 end
 
-function Database.SetModeSetting(modeKey, setting, value)
-    db.fade[modeKey][setting] = value
+function Database.SetModeSetting(dbKey, setting, value)
+    db.interfaceFade[dbKey][setting] = value
 end
 
-function Database.IsExcluded(modeKey, excludeKey)
-    return db.fade[modeKey].exclude[excludeKey]
+function Database.IsExcluded(dbKey, excludeKey)
+    return db.interfaceFade[dbKey].exclude[excludeKey]
 end
 
-function Database.SetExcluded(modeKey, excludeKey, excluded)
-    db.fade[modeKey].exclude[excludeKey] = excluded
+function Database.SetExcluded(dbKey, excludeKey, excluded)
+    db.interfaceFade[dbKey].exclude[excludeKey] = excluded
 end
 
 function Database.GetMinimapAngle()
