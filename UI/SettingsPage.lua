@@ -35,7 +35,7 @@ local function InsertSlider(modeNode, mode, slider)
         label = slider.label,
         min = slider.limits.MIN,
         max = slider.limits.MAX,
-        step = SLIDER_STEP,
+        step = slider.limits.STEP or SLIDER_STEP,
         format = slider.format,
         getValue = function()
             return ns.Database.GetModeSetting(mode.dbKey, slider.setting)

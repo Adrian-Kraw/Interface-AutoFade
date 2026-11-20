@@ -67,8 +67,8 @@ ns.DEFAULTS = {
 ns.LIMITS = {
     ALPHA = { MIN = 0, MAX = 100 },
     MOVE_DELAY = { MIN = 0, MAX = 10 },
-    IDLE_DELAY = { MIN = 5, MAX = 60 },
-    CHAT_DELAY = { MIN = 5, MAX = 60 },
+    IDLE_DELAY = { MIN = 5, MAX = 180, STEP = 5 },
+    CHAT_DELAY = { MIN = 5, MAX = 180, STEP = 5 },
 }
 
 ns.ALPHA = {

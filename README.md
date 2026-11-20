@@ -37,8 +37,8 @@ In dungeons, raids, battlegrounds and other instances the Chill and Open World m
 * **Show on Mouse Hover**: Shows a faded element while the mouse is over it. Details below.
 * **Transparency**: How visible the elements are while you move, from 0 to 100 percent.
 * **Move Duration until Fade In**: How long you move before the interface fades in, from 0 seconds (instantly) to 10 seconds.
-* **Fade Out After**: How long you stand still before the interface fades out, from 5 to 60 seconds.
-* **Chat Visible For**: How long the chat stays visible after a new message, after you close the chat input and after the mouse left the chat, from 5 to 60 seconds.
+* **Fade Out After**: How long you stand still before the interface fades out, from 5 to 180 seconds in steps of 5.
+* **Chat Visible For**: How long the chat stays visible after a new message, after you close the chat input and after the mouse left the chat, from 5 to 180 seconds in steps of 5.
 * **Always visible at 100%**: Elements that never fade in this mode. You can keep any of these visible: Chat, Minimap, Quest / Objectives, Micro Menu, Bags, Action Bars, Unit Frames, Buffs / Debuffs, Reputation Bar and Damage Meter. In the Housing mode of Retail there is also the Housing Build Menu.
 
 ### What fades
@@ -59,6 +59,7 @@ In dungeons, raids, battlegrounds and other instances the Chill and Open World m
 ### Chat
 
 * All chat tabs fade, also whisper tabs and the tab of a Battle.net conversation.
+* A tab that you drag out of the chat window fades together with its window, the tab name included.
 * A new message shows the chat for the set time. This covers Say, Yell, Emote, whispers, Battle.net whispers, Party, Raid, Guild, Officer, channels and instance chat.
 * While the chat input is open, the chat stays visible. Pressing Enter is enough, you do not have to type anything. After you close the input, the chat stays visible for the set time.
 * With Show on Mouse Hover the chat shows while the mouse is over it. After the mouse left, it stays visible for the set time.
@@ -142,8 +143,8 @@ In Dungeons, Raids, Schlachtfeldern und anderen Instanzen gelten Chillmodus und 
 * **Beim Hovern einblenden**: Blendet ein ausgeblendetes Element ein, solange die Maus darüber ist. Details weiter unten.
 * **Transparenz**: Wie sichtbar die Elemente beim Laufen sind, von 0 bis 100 Prozent.
 * **Bewegdauer bis Einblenden**: Wie lange du läufst, bevor das Interface einblendet, von 0 Sekunden (sofort) bis 10 Sekunden.
-* **Ausblenden nach**: Wie lange du stillstehst, bevor das Interface ausblendet, von 5 bis 60 Sekunden.
-* **Chat eingeblendet für**: Wie lange der Chat nach einer neuen Nachricht, nach dem Schließen der Chat-Eingabe und nachdem die Maus den Chat verlassen hat sichtbar bleibt, von 5 bis 60 Sekunden.
+* **Ausblenden nach**: Wie lange du stillstehst, bevor das Interface ausblendet, von 5 bis 180 Sekunden in Schritten von 5.
+* **Chat eingeblendet für**: Wie lange der Chat nach einer neuen Nachricht, nach dem Schließen der Chat-Eingabe und nachdem die Maus den Chat verlassen hat sichtbar bleibt, von 5 bis 180 Sekunden in Schritten von 5.
 * **Immer bei 100% sichtbar**: Elemente, die in diesem Modus nie ausblenden. Du kannst jedes davon sichtbar lassen: Chat, Minimap, Quest / Ziele, Mikromenü, Taschen, Aktionsleisten, HP-Anzeigen, Buffs / Debuffs, Rufbar und Schadensanzeige. Im Housing-Modus von Retail kommt das Housing-Baumenü dazu.
 
 ### Was ausgeblendet wird
@@ -164,6 +165,7 @@ In Dungeons, Raids, Schlachtfeldern und anderen Instanzen gelten Chillmodus und 
 ### Chat
 
 * Alle Chat-Tabs blenden aus, auch Flüster-Tabs und der Tab einer Battle.net-Unterhaltung.
+* Ein Tab, den du aus dem Chatfenster herausziehst, blendet zusammen mit seinem Fenster aus, auch der Tab-Name.
 * Eine neue Nachricht blendet den Chat für die eingestellte Zeit ein. Das gilt für Sagen, Schreien, Emotes, Flüstern, Battle.net-Flüstern, Gruppe, Schlachtzug, Gilde, Offiziere, Kanäle und Instanzchat.
 * Solange die Chat-Eingabe offen ist, bleibt der Chat sichtbar. Enter drücken reicht, du musst nichts tippen. Nach dem Schließen der Eingabe bleibt der Chat für die eingestellte Zeit sichtbar.
 * Mit Beim Hovern einblenden wird der Chat eingeblendet, solange die Maus darüber ist. Nachdem die Maus ihn verlassen hat, bleibt er für die eingestellte Zeit sichtbar.
