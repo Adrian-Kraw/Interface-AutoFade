@@ -141,10 +141,56 @@ end
 -- ============================================================
 local minimapIdleActive  = false
 local hookedOverlays     = {}
-local currentHidden      = {}
+local currentHidden      = {}  -- Set: every part hidden while the minimap is faded
 local minimapShowHooked  = false  -- One-time: hooksecurefunc on Minimap.Show in housing
 local clusterLayoutHooked = false  -- One-time: hooksecurefunc on MinimapCluster.Layout
 local idleClusterWidth, idleClusterHeight = nil, nil  -- Size of the cluster before its parts were hidden
+
+-- The game can draw the map of a cave late or not at all while the minimap is hidden or faded out. So the minimap
+-- is shown at full alpha at once when the area changes and fades back after a moment. A zoom step of one frame
+-- makes the game draw the new map at once. The circle is still empty at that moment, so the step is not seen.
+local MINIMAP_AREA_HOLD   = 2  -- Seconds
+local MINIMAP_AREA_EVENTS = {
+    ZONE_CHANGED = true, ZONE_CHANGED_INDOORS = true, ZONE_CHANGED_NEW_AREA = true, MINIMAP_UPDATE_ZOOM = true,
+}
+local MODE_DB_KEYS    = { "mode1", "mode2", "mode3" }
+local REDRAW_QUIET    = 0.5  -- Seconds after the zoom step in which its own zoom events are ignored
+local minimapHeldUntil = 0
+local redrawQuietUntil = 0
+-- The area changed while the minimap was faded out. It then comes back at full alpha for a moment.
+local minimapChangedWhileFaded = false
+local wasIndoors = false
+
+-- The game shows and hides some parts of the minimap by itself, for example the layers of a cave or a tunnel when
+-- the area changes. While the minimap is faded, the addon keeps all parts hidden but follows what the game wants.
+-- Otherwise a layer that the game hid meanwhile would be shown again with the minimap, and the map stays black.
+local isHidingOverlay = false  -- True while the addon hides a part itself, so the hook does not take it for the game
+
+local function HideOverlay(part)
+    isHidingOverlay = true
+    part:Hide()
+    isHidingOverlay = false
+end
+
+local function HookOverlay(part)
+    if hookedOverlays[part] then return end
+    hookedOverlays[part] = true
+    part:HookScript("OnShow", function(self)
+        if minimapIdleActive then
+            currentHidden[self] = true
+            HideOverlay(self)
+        end
+    end)
+    local function OnGameHides(self)
+        if minimapIdleActive and not isHidingOverlay then currentHidden[self] = nil end
+    end
+    hooksecurefunc(part, "Hide", OnGameHides)
+    if part.SetShown then
+        hooksecurefunc(part, "SetShown", function(self, shown)
+            if not shown then OnGameHides(self) end
+        end)
+    end
+end
 
 local function HideMinimapOverlays()
     if minimapIdleActive then return end  -- already hidden, no second wipe
@@ -184,16 +230,11 @@ local function HideMinimapOverlays()
     for _, child in ipairs({ MinimapCluster:GetChildren() }) do
         local name = child:GetName()
         if not name or name == "" then
+            HookOverlay(child)
             local ok, shown = pcall(function() return child:IsShown() end)
             if ok and shown then
-                if not hookedOverlays[child] then
-                    hookedOverlays[child] = true
-                    child:HookScript("OnShow", function(self)
-                        if minimapIdleActive then self:Hide() end
-                    end)
-                end
-                currentHidden[#currentHidden + 1] = child
-                child:Hide()
+                currentHidden[child] = true
+                HideOverlay(child)
             end
         end
     end
@@ -206,7 +247,7 @@ local function ShowMinimapOverlays()
     if Minimap and not Minimap:IsShown() then
         Minimap:Show()
     end
-    for _, child in ipairs(currentHidden) do
+    for child in pairs(currentHidden) do
         pcall(function() child:Show() end)
     end
     wipe(currentHidden)
@@ -345,7 +386,40 @@ local function GetHoveredKeys()
     return hovered
 end
 
-local function ApplyUnified(alphaOnly)
+-- The zoom step belongs to the fading. It is not done while all modes are switched off.
+local function IsAnyModeEnabled()
+    local db = InterfaceAutoFadeDB and InterfaceAutoFadeDB.interfaceFade
+    if not db then return false end
+    for _, key in ipairs(MODE_DB_KEYS) do
+        if db[key] and db[key].enabled == true then return true end
+    end
+    return false
+end
+
+-- Moves the zoom one step and back one frame later, so the game draws the map of the new area at once
+local function RedrawMinimapZoom()
+    if not Minimap or not Minimap.GetZoom or not Minimap.SetZoom or not Minimap.GetZoomLevels then return end
+    local zoom, levels = Minimap:GetZoom(), Minimap:GetZoomLevels()
+    if levels < 2 then return end
+    redrawQuietUntil = GetTime() + REDRAW_QUIET
+    Minimap:SetZoom(zoom < levels - 1 and zoom + 1 or zoom - 1)
+    C_Timer.After(0, function() Minimap:SetZoom(zoom) end)
+end
+
+local ApplyUnified
+
+-- Puts the minimap at full alpha at once, not faded in, and keeps it there for a moment. The game sees the full
+-- alpha in the same frame, which it needs to draw the map when the area changes and after the minimap was shown.
+local function BeginMinimapHold()
+    minimapHeldUntil = GetTime() + MINIMAP_AREA_HOLD
+    fadeTargets[MinimapCluster] = nil
+    MinimapCluster:SetAlpha(1.0)
+    C_Timer.After(MINIMAP_AREA_HOLD + 0.1, function()
+        if GetTime() >= minimapHeldUntil then ApplyUnified() end
+    end)
+end
+
+function ApplyUnified(alphaOnly)
     if inCombat then return end
     -- The Hide Interface key (Alt+Z by default) hides UIParent. Nothing is touched meanwhile.
     -- The update is made up for as soon as the interface is back.
@@ -362,8 +436,19 @@ local function ApplyUnified(alphaOnly)
     -- With the hover option, an element under the mouse is shown while the rest stays faded
     local hovered = IsHoverRevealOn() and GetHoveredKeys() or {}
 
+    -- If the area changed while the minimap was faded out, it comes back at full alpha for a moment, so the game
+    -- draws the map of the new area. The zoom step follows once the parts are shown again.
+    if minimapIdleActive and minimapChangedWhileFaded and not alphaOnly and MinimapCluster
+        and (maxAlpha > 0 or IsExcluded("minimap") or hovered.minimap) then
+        minimapChangedWhileFaded = false
+        BeginMinimapHold()
+        if IsAnyModeEnabled() then C_Timer.After(0, RedrawMinimapZoom) end
+    end
+    local minimapHeld = GetTime() < minimapHeldUntil
+
     for _, el in ipairs(ELEMENTS) do
-        local alpha = (IsExcluded(EXCLUDE_KEY[el.key]) or hovered[el.key]) and 1.0 or maxAlpha
+        local keepFull = hovered[el.key] or (el.key == "minimap" and minimapHeld)
+        local alpha = (IsExcluded(EXCLUDE_KEY[el.key]) or keepFull) and 1.0 or maxAlpha
         local ok, frames = pcall(el.frames)
         if ok and frames then
             for _, f in ipairs(frames) do FadeTo(f, alpha) end
@@ -377,7 +462,7 @@ local function ApplyUnified(alphaOnly)
     -- came back, Blizzard is still busy with its own layout. So these parts are left to the next update.
     if alphaOnly then return end
 
-    if maxAlpha == 0 and not IsExcluded("minimap") and not hovered.minimap then
+    if maxAlpha == 0 and not IsExcluded("minimap") and not hovered.minimap and not minimapHeld then
         HideMinimapOverlays()
     else
         if Minimap then Minimap:SetAlpha(1.0) end
@@ -393,6 +478,42 @@ local function GoFullAll()
         for _, f in ipairs(el.frames()) do FadeTo(f, 1.0) end
     end
     for _, cf in ipairs(GetChatFrames()) do FadeTo(cf, 1.0) end
+end
+
+-- Shows the minimap at full alpha for a moment. The alpha is set at once and not faded in, so the game sees it
+-- in the same frame in which it switches the map.
+local function HoldMinimapVisible()
+    if not MinimapCluster then return end
+    -- No mode is active, for example in combat. The minimap may still be on its way to full alpha, for example
+    -- when the combat started while it was faded out. It is set to full alpha at once, the game needs it now.
+    if not next(modeAlphas) then
+        if MinimapCluster:GetAlpha() < 0.99 then
+            fadeTargets[MinimapCluster] = nil
+            MinimapCluster:SetAlpha(1.0)
+        end
+        return
+    end
+    -- Nothing to do while it is fully visible anyway, for example under the mouse or as an exception
+    if GetTime() >= minimapHeldUntil and MinimapCluster:GetAlpha() >= 0.99 and not minimapIdleActive then return end
+    BeginMinimapHold()
+    ApplyUnified()
+end
+
+local function OnMinimapAreaEvent(event)
+    if GetTime() < redrawQuietUntil then return end
+    local indoors = IsIndoors and IsIndoors() and true or false
+    local changed = indoors ~= wasIndoors
+    wasIndoors = indoors
+    -- Subzone changes in the open world are frequent. They only count when the player went in or out.
+    if event == "ZONE_CHANGED" and not changed then return end
+    -- Faded out: nothing to see yet. The minimap draws the new area when it comes back, see ApplyUnified.
+    if minimapIdleActive then
+        minimapChangedWhileFaded = true
+        return
+    end
+    HoldMinimapVisible()
+    -- Only when going in. Further events inside a building do not need the zoom step.
+    if indoors and changed and IsAnyModeEnabled() then C_Timer.After(0, RedrawMinimapZoom) end
 end
 
 -- ============================================================
@@ -607,6 +728,9 @@ ef:RegisterEvent("PLAYER_REGEN_ENABLED")
 ef:RegisterEvent("PLAYER_FLAGS_CHANGED")
 ef:RegisterEvent("ZONE_CHANGED_INDOORS")
 ef:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+-- Only used to keep the minimap visible when the area changes, pcall in case an event is missing in this client
+pcall(ef.RegisterEvent, ef, "ZONE_CHANGED")
+pcall(ef.RegisterEvent, ef, "MINIMAP_UPDATE_ZOOM")
 for _, ev in ipairs(CHAT_EVENTS) do ef:RegisterEvent(ev) end
 for _, ev in ipairs(BN_CHAT_EVENTS) do
     isChatEvent[ev] = true
@@ -623,8 +747,10 @@ ef:SetScript("OnEvent", function(_, event)
         inCombat = false
         -- Reset the minimap idle state before Show() is called.
         -- Otherwise the hooksecurefunc hook would hide the Minimap again immediately.
+        minimapChangedWhileFaded = false
         ShowMinimapOverlays()
         if Minimap then Minimap:SetAlpha(1.0) end
+        wasIndoors = IsIndoors and IsIndoors() and true or false
         for _, m in ipairs(ALL_MODES) do m:OnEnteringWorld() end
 
     elseif event == "PLAYER_REGEN_DISABLED" then
@@ -647,6 +773,9 @@ ef:SetScript("OnEvent", function(_, event)
         or event == "ZONE_CHANGED_NEW_AREA" then
         for _, m in ipairs(ALL_MODES) do m:OnZoneChanged() end
     end
+
+    -- After the modes, because a zone change can make a mode fade the minimap out
+    if MINIMAP_AREA_EVENTS[event] then OnMinimapAreaEvent(event) end
 end)
 
 -- ============================================================
@@ -813,6 +942,10 @@ end)
 -- ============================================================
 -- Debug
 -- ============================================================
+-- Frames at the minimap that may stay visible or move while the minimap is faded
+local UI_DEBUG_FRAMES = { "GameTimeFrame", "TimeManagerClockButton", "QueueStatusButton",
+    "QueueStatusMinimapButton", "MiniMapLFGFrame" }
+
 SLASH_IAFHUD1 = "/iafhud"
 SlashCmdList["IAFHUD"] = function(input)
     if input == "zone" then
@@ -820,6 +953,21 @@ SlashCmdList["IAFHUD"] = function(input)
               " / Sub: " .. (GetSubZoneText() or "?"))
         local inInst, instType = IsInInstance()
         print("  IsInInstance: " .. tostring(inInst) .. "  Type: " .. tostring(instType))
+        return
+    end
+    if input == "ui" then
+        for _, n in ipairs(UI_DEBUG_FRAMES) do
+            local f = _G[n]
+            if not f then
+                print("  " .. n .. ": not found")
+            else
+                local parent = f:GetParent()
+                local ignoresAlpha = f.IsIgnoringParentAlpha and f:IsIgnoringParentAlpha()
+                print(string.format("  %s  parent=%s  shown=%s  alpha=%.2f  effAlpha=%.2f  effScale=%.3f  ignoreAlpha=%s",
+                    n, parent and parent:GetName() or "(no name)", tostring(f:IsShown()),
+                    f:GetAlpha(), f:GetEffectiveAlpha(), f:GetEffectiveScale(), tostring(ignoresAlpha)))
+            end
+        end
         return
     end
     local function scanFrame(label, frame)
