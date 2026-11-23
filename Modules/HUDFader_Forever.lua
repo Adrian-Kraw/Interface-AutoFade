@@ -999,29 +999,29 @@ SlashCmdList["IAFHUD"] = function(input)
         print("|cFFFFD100HUDFader Zone:|r " .. (GetRealZoneText() or "?") ..
               " / Sub: " .. (GetSubZoneText() or "?"))
         local inInst, instType = IsInInstance()
-        print("  IsInInstance: " .. tostring(inInst) .. "  Typ: " .. tostring(instType))
+        print("  IsInInstance: " .. tostring(inInst) .. "  Type: " .. tostring(instType))
         return
     end
     if input == "ui" then
         for _, n in ipairs(UI_DEBUG_FRAMES) do
             local f = _G[n]
             if not f then
-                print("  " .. n .. ": nicht gefunden")
+                print("  " .. n .. ": not found")
             else
                 local parent = f:GetParent()
                 local ignoresAlpha = f.IsIgnoringParentAlpha and f:IsIgnoringParentAlpha()
                 print(string.format("  %s  parent=%s  shown=%s  alpha=%.2f  effAlpha=%.2f  effScale=%.3f  ignoreAlpha=%s",
-                    n, parent and parent:GetName() or "(kein Name)", tostring(f:IsShown()),
+                    n, parent and parent:GetName() or "(no name)", tostring(f:IsShown()),
                     f:GetAlpha(), f:GetEffectiveAlpha(), f:GetEffectiveScale(), tostring(ignoresAlpha)))
                 local point, relativeTo, relativePoint, x, y = f:GetPoint(1)
                 print(string.format("    anchor=%s to %s %s  x=%.0f  y=%.0f", tostring(point),
-                    relativeTo and relativeTo:GetName() or "(kein Name)", tostring(relativePoint), x or 0, y or 0))
+                    relativeTo and relativeTo:GetName() or "(no name)", tostring(relativePoint), x or 0, y or 0))
             end
         end
         return
     end
     local function scanFrame(label, frame)
-        if not frame then print("  " .. label .. ": nicht gefunden"); return end
+        if not frame then print("  " .. label .. ": not found"); return end
         print(string.format("|cFFFFD100%s|r  alpha=%.2f", label, frame:GetAlpha()))
         local count = 0
         -- Addons like Questie put hundreds of numbered frames on the minimap. They are counted per name, not listed.
@@ -1040,13 +1040,13 @@ SlashCmdList["IAFHUD"] = function(input)
                 local okW, w = pcall(function() return child:GetWidth() end)
                 local okH, h = pcall(function() return child:GetHeight() end)
                 local size  = (okW and okH) and string.format("%dx%d", w, h) or "?"
-                print(string.format("  [%d] %-45s %s  alpha=%s  size=%s", count, name or "(kein Name)", shown, alpha, size))
+                print(string.format("  [%d] %-45s %s  alpha=%s  size=%s", count, name or "(no name)", shown, alpha, size))
             end
         end
         for prefix, group in pairs(groups) do
             print(string.format("  %s...  %d SHOWN, %d hidden", prefix, group.shown, group.hidden))
         end
-        print(string.format("  Gesamt: %d Kinder", count))
+        print(string.format("  Total: %d children", count))
     end
     scanFrame("MinimapCluster", MinimapCluster)
     scanFrame("Minimap",        Minimap)
