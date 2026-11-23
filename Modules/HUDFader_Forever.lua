@@ -411,6 +411,13 @@ local function IsHoverRevealOn()
     return false
 end
 
+-- True while the open bar of the button collector hangs on the minimap. The minimap stays visible meanwhile,
+-- because the bar would jump away with the minimap when the minimap is scaled down.
+local function IsMinimapInUse()
+    local collector = AklimeMod_MinimapCollector
+    return collector and collector.IsOpen and collector.IsOpen() or false
+end
+
 -- The longest chat delay of the active modes
 local function GetChatHoldDuration()
     local duration = nil
@@ -483,9 +490,10 @@ function ApplyUnified(alphaOnly)
         BeginMinimapHold()
     end
     local minimapHeld = GetTime() < minimapHeldUntil
+    local minimapInUse = IsMinimapInUse()
 
     for _, el in ipairs(ELEMENTS) do
-        local keepFull = hovered[el.key] or (el.key == "minimap" and minimapHeld)
+        local keepFull = hovered[el.key] or (el.key == "minimap" and (minimapHeld or minimapInUse))
         local alpha = (IsExcluded(EXCLUDE_KEY[el.key]) or keepFull) and 1.0 or maxAlpha
         local ok, frames = pcall(el.frames)
         if ok and frames then
@@ -500,7 +508,7 @@ function ApplyUnified(alphaOnly)
     -- came back, Blizzard is still busy with its own layout. So these parts are left to the next update.
     if alphaOnly then return end
 
-    if maxAlpha == 0 and not IsExcluded("minimap") and not hovered.minimap and not minimapHeld then
+    if maxAlpha == 0 and not IsExcluded("minimap") and not hovered.minimap and not minimapHeld and not minimapInUse then
         HideMinimapOverlays()
     else
         if Minimap then Minimap:SetAlpha(1.0) end
@@ -919,6 +927,7 @@ local HOVER_CHECK_INTERVAL = 0.1
 local hoverElapsed = 0
 local lastHoverSignature = ""
 local wasOverChat = false
+local wasMinimapInUse = false
 -- Blizzard sets the alpha of its managed frames, such as the objective tracker, back to 1 when the interface
 -- is shown again. The faded alpha is set again at once, so these frames do not stay bright.
 local interfaceWasShown = true
@@ -953,6 +962,12 @@ hoverFrame:SetScript("OnUpdate", function(_, elapsed)
     hoverElapsed = 0
     if updateSkippedWhileHidden and UIParent:IsShown() then
         updateSkippedWhileHidden = false
+        ApplyUnified()
+    end
+    -- Opening or closing the bar of the collector shows or fades the minimap, also without the hover option
+    local minimapInUse = IsMinimapInUse()
+    if minimapInUse ~= wasMinimapInUse then
+        wasMinimapInUse = minimapInUse
         ApplyUnified()
     end
     if not next(modeAlphas) or not IsHoverRevealOn() then
