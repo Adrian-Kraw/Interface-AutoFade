@@ -47,8 +47,11 @@ local ELEMENTS = {
         return f
     end },
     { key = "minimap", frames = function()
-        -- Only fade MinimapCluster. Minimap inherits the parent alpha automatically.
-        return MinimapCluster and {MinimapCluster} or {}
+        -- Minimap inherits the alpha of MinimapCluster automatically.
+        local f = MinimapCluster and {MinimapCluster} or {}
+        -- The queue eye hangs on the micro menu container and not on the cluster. It fades together with the minimap.
+        if QueueStatusButton then f[#f+1] = QueueStatusButton end
+        return f
     end },
     { key = "buffs",        frames = function() return BuffFrame             and {BuffFrame}             or {} end },
     { key = "debuffs",      frames = function() return DebuffFrame           and {DebuffFrame}           or {} end },
