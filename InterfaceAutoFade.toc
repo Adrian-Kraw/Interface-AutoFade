@@ -1,4 +1,4 @@
-## Interface: 120105, 16001
+## Interface: 120105, 120107, 16001
 ## Title: Interface AutoFade
 ## Notes: Fades interface elements depending on where you are. One addon for Retail and Forever.
 ## Notes-deDE: Blendet Interface-Elemente je nach Aufenthaltsort aus. Ein Addon für Retail und Forever.
